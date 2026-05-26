@@ -1,9 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Text, ForeignKey
 from app.database.connection import Base
 
-class Shift(Base):
-
-    __tablename__ = "shifts"
+class Incident(Base):
+    __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -19,8 +18,7 @@ class Shift(Base):
         nullable=True
     )
 
-    start_time = Column(DateTime, nullable=False)
-
-    end_time = Column(DateTime, nullable=False)
-
-    status = Column(String(50), default="scheduled")
+    type = Column(String(50), nullable=False)
+    description = Column(Text, nullable=False)
+    incident_date = Column(Date, nullable=False)
+    status = Column(String(50), default="pending")

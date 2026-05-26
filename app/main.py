@@ -5,6 +5,11 @@ from app.routes.owner_routes import router as owner_router
 from app.routes.vehicle_routes import router as vehicle_router
 from app.routes.driver_routes import router as driver_router
 from app.routes.trip_routes import router as trip_router
+from app.routes.shift_routes import router as shift_router
+from app.routes.alert_routes import router as alert_router
+from app.routes.payment_routes import router as payment_router
+from app.routes.incident_routes import router as incident_router
+from app.routes.auth_routes import router as auth_router
 
 app = FastAPI(title="Radiotaxis API")
 
@@ -21,6 +26,11 @@ app.include_router(vehicle_router)
 app.include_router(owner_router)
 app.include_router(driver_router)
 app.include_router(trip_router)
+app.include_router(shift_router)
+app.include_router(alert_router)
+app.include_router(payment_router)
+app.include_router(incident_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def home():
