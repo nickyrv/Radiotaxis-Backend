@@ -10,8 +10,11 @@ from app.routes.alert_routes import router as alert_router
 from app.routes.payment_routes import router as payment_router
 from app.routes.incident_routes import router as incident_router
 from app.routes.auth_routes import router as auth_router
+from fastapi.staticfiles import StaticFiles
+from app.routes.vehicle_history_routes import router as vehicle_history_router
 
 app = FastAPI(title="Radiotaxis API")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,6 +34,7 @@ app.include_router(alert_router)
 app.include_router(payment_router)
 app.include_router(incident_router)
 app.include_router(auth_router)
+app.include_router(vehicle_history_router)
 
 @app.get("/")
 def home():
