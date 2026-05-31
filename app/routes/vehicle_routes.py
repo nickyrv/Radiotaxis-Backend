@@ -47,8 +47,12 @@ def get_vehicles(db: Session = Depends(get_db)):
     return db.query(Vehicle).all()
 
 
-@router.get("/{vehicle_id}")
-def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
+@router.put("/{vehicle_id}")
+def update_vehicle(
+    vehicle_id: int,
+    vehicle_data: VehicleUpdate,
+    db: Session = Depends(get_db)
+):
     vehicle = db.query(Vehicle).filter(
         Vehicle.id == vehicle_id
     ).first()
@@ -59,8 +63,28 @@ def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
             detail="Vehículo no encontrado"
         )
 
-    return vehicle
+    if vehicle_data.service_type == "radio_taxi" and vehicle_data.radio_code:
+        existing_code = db.query(Vehicle).filter(
+            Vehicle.radio_code == vehicle_data.radio_code,
+            Vehicle.service_type == "radio_taxi",
+            Vehicle.status != "inactive",
+            Vehicle.management_status == "active",
+            Vehicle.id != vehicle_id
+        ).first()
 
+        if existing_code:
+            raise HTTPException(
+                status_code=400,
+                detail="El código interno ya está asignado a otro vehículo activo"
+            )
+
+    for key, value in vehicle_data.model_dump().items():
+        setattr(vehicle, key, value)
+
+    db.commit()
+    db.refresh(vehicle)
+
+    return vehicle
 
 @router.post("/")
 def create_vehicle(
@@ -121,6 +145,21 @@ def update_vehicle(
             status_code=400,
             detail="Ya existe otro vehículo con esa placa"
         )
+    if vehicle_data.service_type == "radio_taxi":
+        existing_code = db.query(Vehicle).filter(
+            Vehicle.radio_code == vehicle_data.radio_code,
+            Vehicle.service_type == "radio_taxi",
+            Vehicle.status != "inactive",
+            Vehicle.management_status == "active",
+            Vehicle.id != vehicle_id
+        ).first()
+
+    if existing_code:
+        raise HTTPException(
+            status_code=400,
+            detail="El código interno ya está asignado a otro vehículo activo"
+        )
+
 
     for key, value in vehicle_data.model_dump().items():
         setattr(vehicle, key, value)

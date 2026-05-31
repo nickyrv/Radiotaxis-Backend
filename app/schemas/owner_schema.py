@@ -10,6 +10,8 @@ class OwnerBase(BaseModel):
     address: Optional[str] = None
     status: Optional[str] = "active"
     join_date: Optional[date] = None
+    address_lat: Optional[float] = None
+address_lng: Optional[float] = None
 
 class OwnerCreate(OwnerBase):
     pass

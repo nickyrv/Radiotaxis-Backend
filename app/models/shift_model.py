@@ -24,3 +24,7 @@ class Shift(Base):
     end_time = Column(DateTime, nullable=False)
 
     status = Column(String(50), default="scheduled")
+
+    turn_order = Column(Integer, default=1)
+
+    is_active = Column(Integer, default=1)

@@ -14,6 +14,10 @@ class ShiftBase(BaseModel):
 
     status: Optional[str] = "scheduled"
 
+    turn_order: Optional[int] = 1
+
+    is_active: Optional[int] = 1
+
 
 class ShiftCreate(ShiftBase):
     pass

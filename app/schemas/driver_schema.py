@@ -13,10 +13,15 @@ class DriverBase(BaseModel):
     license_expiry: Optional[date] = None
 
     address: Optional[str] = None
+    address_lat: Optional[float] = None
+    address_lng: Optional[float] = None
 
     status: Optional[str] = "active"
 
     vehicle_id: Optional[int] = None
+    has_tic: Optional[bool] = False
+    license_category: Optional[str] = None
+    photo_url: Optional[str] = None
 
 
 class DriverCreate(DriverBase):
