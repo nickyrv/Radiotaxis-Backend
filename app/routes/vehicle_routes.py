@@ -9,6 +9,11 @@ import re
 from app.database.connection import get_db
 from app.models.vehicle_model import Vehicle
 from app.schemas.vehicle_schema import VehicleCreate, VehicleUpdate
+from app.models.driver_model import Driver
+from app.models.shift_model import Shift
+from app.models.shift_day_model import ShiftDay
+from app.models.payment_model import Payment
+from app.models.vehicle_history_model import VehicleHistory
 
 
 router = APIRouter(prefix="/vehicles", tags=["Vehicles"])
@@ -233,12 +238,79 @@ def delete_vehicle(
             detail="Vehículo no encontrado"
         )
 
+    db.query(Driver).filter(
+        Driver.vehicle_id == vehicle_id
+    ).update({
+        Driver.vehicle_id: None
+    })
+
+    db.query(ShiftDay).filter(
+        ShiftDay.vehicle_id == vehicle_id
+    ).delete()
+
+    db.query(Shift).filter(
+        Shift.vehicle_id == vehicle_id
+    ).delete()
+
+    db.query(Payment).filter(
+        Payment.vehicle_id == vehicle_id
+    ).delete()
+
+    db.query(VehicleHistory).filter(
+        VehicleHistory.vehicle_id == vehicle_id
+    ).delete()
+
     db.delete(vehicle)
+
     db.commit()
 
     return {
         "message": "Vehículo eliminado correctamente"
     }
+    @router.delete("/{vehicle_id}")
+    def delete_vehicle(
+        vehicle_id: int,
+        db: Session = Depends(get_db)
+    ):
+        vehicle = db.query(Vehicle).filter(
+            Vehicle.id == vehicle_id
+        ).first()
+
+        if not vehicle:
+            raise HTTPException(
+                status_code=404,
+                detail="Vehículo no encontrado"
+            )
+
+        db.query(Driver).filter(
+            Driver.vehicle_id == vehicle_id
+        ).update({
+            Driver.vehicle_id: None
+        })
+
+        db.query(ShiftDay).filter(
+            ShiftDay.vehicle_id == vehicle_id
+        ).delete()
+
+        db.query(Shift).filter(
+            Shift.vehicle_id == vehicle_id
+        ).delete()
+
+        db.query(Payment).filter(
+            Payment.vehicle_id == vehicle_id
+        ).delete()
+
+        db.query(VehicleHistory).filter(
+            VehicleHistory.vehicle_id == vehicle_id
+        ).delete()
+
+        db.delete(vehicle)
+
+        db.commit()
+
+        return {
+            "message": "Vehículo eliminado correctamente"
+        }
 @router.post("/{vehicle_id}/upload-photo")
 def upload_vehicle_photo(
     vehicle_id: int,

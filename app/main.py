@@ -11,7 +11,8 @@ from app.routes.payment_routes import router as payment_router
 from app.routes.auth_routes import router as auth_router
 from fastapi.staticfiles import StaticFiles
 from app.routes.vehicle_history_routes import router as vehicle_history_router
-
+from app.routes.shift_day_routes import router as shift_day_router
+ 
 app = FastAPI(title="Radiotaxis API")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -34,6 +35,7 @@ app.include_router(payment_router)
 
 app.include_router(auth_router)
 app.include_router(vehicle_history_router)
+app.include_router(shift_day_router)
 
 @app.get("/")
 def home():
