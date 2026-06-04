@@ -1,17 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-
 from fastapi_mail import FastMail, MessageSchema
-
 from app.database.connection import get_db
 from app.models.user_model import User
 from app.schemas.auth_schema import LoginRequest
 from app.config.mail_config import conf
 
-
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
 
 @router.post("/login")
 def login(
@@ -21,7 +17,6 @@ def login(
     user = db.query(User).filter(
         User.email == login_data.email,
         User.password == login_data.password,
-        User.role == login_data.role
     ).first()
 
     if not user:
@@ -45,10 +40,8 @@ def login(
         "status": user.status
     }
 
-
 class ForgotPasswordRequest(BaseModel):
     email: str
-
 
 @router.post("/forgot-password")
 async def forgot_password(

@@ -4,7 +4,6 @@ from typing import Optional
 class LoginRequest(BaseModel):
     email: str
     password: str
-    role: str
 
 class LoginResponse(BaseModel):
     id: int

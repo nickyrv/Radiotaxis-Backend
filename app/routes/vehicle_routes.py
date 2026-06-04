@@ -14,7 +14,8 @@ from app.models.shift_model import Shift
 from app.models.shift_day_model import ShiftDay
 from app.models.payment_model import Payment
 from app.models.vehicle_history_model import VehicleHistory
-
+from app.models.vehicle_management_event_model import VehicleManagementEvent
+from app.models.shift_model import Shift
 
 router = APIRouter(prefix="/vehicles", tags=["Vehicles"])
 
@@ -108,6 +109,23 @@ def create_vehicle(
             detail="Ya existe un vehículo registrado con esa placa"
         )
 
+    if (
+        vehicle_data.service_type == "radio_taxi" and
+        vehicle_data.radio_code
+    ):
+        existing_code = db.query(Vehicle).filter(
+            Vehicle.radio_code == vehicle_data.radio_code,
+            Vehicle.service_type == "radio_taxi",
+            Vehicle.status != "inactive",
+            Vehicle.management_status == "active"
+        ).first()
+
+        if existing_code:
+            raise HTTPException(
+                status_code=400,
+                detail="El código interno ya está asignado a otro vehículo activo"
+            )
+
     new_vehicle = Vehicle(
         **vehicle_data.model_dump()
     )
@@ -120,7 +138,6 @@ def create_vehicle(
     db.refresh(new_vehicle)
 
     return new_vehicle
-
 
 @router.put("/{vehicle_id}")
 def update_vehicle(
@@ -150,7 +167,11 @@ def update_vehicle(
             status_code=400,
             detail="Ya existe otro vehículo con esa placa"
         )
-    if vehicle_data.service_type == "radio_taxi":
+
+    if (
+        vehicle_data.service_type == "radio_taxi" and
+        vehicle_data.radio_code
+    ):
         existing_code = db.query(Vehicle).filter(
             Vehicle.radio_code == vehicle_data.radio_code,
             Vehicle.service_type == "radio_taxi",
@@ -159,12 +180,11 @@ def update_vehicle(
             Vehicle.id != vehicle_id
         ).first()
 
-    if existing_code:
-        raise HTTPException(
-            status_code=400,
-            detail="El código interno ya está asignado a otro vehículo activo"
-        )
-
+        if existing_code:
+            raise HTTPException(
+                status_code=400,
+                detail="El código interno ya está asignado a otro vehículo activo"
+            )
 
     for key, value in vehicle_data.model_dump().items():
         setattr(vehicle, key, value)
@@ -173,7 +193,6 @@ def update_vehicle(
     db.refresh(vehicle)
 
     return vehicle
-
 
 @router.patch("/{vehicle_id}/deactivate")
 def deactivate_vehicle(
@@ -193,11 +212,31 @@ def deactivate_vehicle(
     vehicle.management_status = "inactive"
     vehicle.deactivation_date = date.today()
 
+    db.query(Driver).filter(
+        Driver.vehicle_id == vehicle_id
+    ).update({
+        Driver.vehicle_id: None
+    })
+    db.query(Shift).filter(
+        Shift.vehicle_id == vehicle_id,
+        Shift.is_active == 1
+    ).update({
+        Shift.is_active: 0,
+        Shift.status: "completed"
+    })
+
+    new_event = VehicleManagementEvent(
+        vehicle_id=vehicle_id,
+        event_type="deactivated",
+        notes="Vehículo dado de baja. Conductores liberados de la asignación."
+    )
+
+    db.add(new_event)
+
     db.commit()
     db.refresh(vehicle)
 
     return vehicle
-
 
 @router.patch("/{vehicle_id}/activate")
 def activate_vehicle(
@@ -216,6 +255,14 @@ def activate_vehicle(
 
     vehicle.management_status = "active"
     vehicle.deactivation_date = None
+
+    new_event = VehicleManagementEvent(
+        vehicle_id=vehicle_id,
+        event_type="reactivated",
+        notes="Vehículo reingresado al sistema de administración."
+    )
+
+    db.add(new_event)
 
     db.commit()
     db.refresh(vehicle)

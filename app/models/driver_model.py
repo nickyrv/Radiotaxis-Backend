@@ -23,7 +23,13 @@ class Driver(Base):
     address_lng = Column(Float, nullable=True)
 
     photo_url = Column(String(255), nullable=True)
+    house_door_photo_url = Column(String(255), nullable=True)
 
+    ci_front_photo_url = Column(String(255), nullable=True)
+
+    ci_back_photo_url = Column(String(255), nullable=True)
+
+    electricity_bill_photo_url = Column(String(255), nullable=True)
     status = Column(String(50), default="active")
 
     vehicle_id = Column(

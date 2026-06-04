@@ -207,6 +207,69 @@ async def upload_driver_photo(
 
     return driver
 
+@router.post("/{driver_id}/upload-document/{document_type}")
+async def upload_driver_document(
+    driver_id: int,
+    document_type: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    driver = db.query(Driver).filter(
+        Driver.id == driver_id
+    ).first()
+
+    if not driver:
+        raise HTTPException(
+            status_code=404,
+            detail="Conductor no encontrado"
+        )
+
+    allowed_document_types = {
+        "house_door": "house_door_photo_url",
+        "ci_front": "ci_front_photo_url",
+        "ci_back": "ci_back_photo_url",
+        "electricity_bill": "electricity_bill_photo_url"
+    }
+
+    if document_type not in allowed_document_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Tipo de documento no válido"
+        )
+
+    allowed_extensions = ["jpg", "jpeg", "png", "webp", "jfif", "heic", "avif"]
+
+    file_extension = file.filename.split(".")[-1].lower()
+
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Formato de imagen no permitido: {file_extension}"
+        )
+
+    upload_dir = f"static/drivers/documents/{document_type}"
+
+    os.makedirs(upload_dir, exist_ok=True)
+
+    filename = f"{uuid4()}.{file_extension}"
+
+    file_path = os.path.join(upload_dir, filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    document_url = f"http://127.0.0.1:8000/{file_path}"
+
+    setattr(
+        driver,
+        allowed_document_types[document_type],
+        document_url
+    )
+
+    db.commit()
+    db.refresh(driver)
+
+    return driver
 
 @router.delete("/{driver_id}")
 def delete_driver(
