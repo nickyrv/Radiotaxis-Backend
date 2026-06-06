@@ -207,6 +207,48 @@ async def upload_driver_photo(
 
     return driver
 
+@router.post("/{driver_id}/upload-criminal-record")
+async def upload_criminal_record(
+    driver_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    driver = db.query(Driver).filter(
+        Driver.id == driver_id
+    ).first()
+
+    if not driver:
+        raise HTTPException(
+            status_code=404,
+            detail="Conductor no encontrado"
+        )
+
+    file_extension = file.filename.split(".")[-1].lower()
+
+    if file_extension != "pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo se permite subir archivos PDF"
+        )
+
+    upload_dir = "static/drivers/documents/criminal_records"
+
+    os.makedirs(upload_dir, exist_ok=True)
+
+    filename = f"{uuid4()}.{file_extension}"
+
+    file_path = os.path.join(upload_dir, filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    driver.criminal_record_pdf_url = f"http://127.0.0.1:8000/{file_path}"
+
+    db.commit()
+    db.refresh(driver)
+
+    return driver
+
 @router.post("/{driver_id}/upload-document/{document_type}")
 async def upload_driver_document(
     driver_id: int,

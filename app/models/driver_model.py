@@ -30,6 +30,7 @@ class Driver(Base):
     ci_back_photo_url = Column(String(255), nullable=True)
 
     electricity_bill_photo_url = Column(String(255), nullable=True)
+    criminal_record_pdf_url = Column(String(255), nullable=True)
     status = Column(String(50), default="active")
 
     vehicle_id = Column(

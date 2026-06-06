@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from datetime import date, timedelta
+from pydantic import BaseModel
+from typing import List, Optional
 from app.database.connection import get_db
 from app.models.shift_day_model import ShiftDay
 from app.schemas.shift_day_schema import (
@@ -14,6 +16,11 @@ router = APIRouter(
     tags=["Shift Days"]
 )
 
+class ProgramShiftDaysRequest(BaseModel):
+    vehicle_id: int
+    driver_ids: List[int]
+    start_date: date
+    days_to_generate: Optional[int] = 30
 
 @router.get("/")
 def get_shift_days(
@@ -22,6 +29,49 @@ def get_shift_days(
 
     return db.query(ShiftDay).all()
 
+@router.post("/program")
+def program_shift_days(
+    data: ProgramShiftDaysRequest,
+    db: Session = Depends(get_db)
+):
+    if len(data.driver_ids) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Debe seleccionar al menos un conductor"
+        )
+
+    for i in range(data.days_to_generate):
+        current_date = data.start_date + timedelta(days=i)
+
+        if len(data.driver_ids) == 1:
+            driver_id = data.driver_ids[0] if i % 2 == 0 else None
+        else:
+            driver_id = data.driver_ids[i % len(data.driver_ids)]
+
+        existing_day = db.query(ShiftDay).filter(
+            ShiftDay.vehicle_id == data.vehicle_id,
+            ShiftDay.shift_date == current_date
+        ).first()
+
+        if existing_day:
+            existing_day.driver_id = driver_id
+            existing_day.source = "automatic"
+            existing_day.notes = "Programación automática de relevos"
+        else:
+            new_day = ShiftDay(
+                vehicle_id=data.vehicle_id,
+                driver_id=driver_id,
+                shift_date=current_date,
+                source="automatic",
+                notes="Programación automática de relevos"
+            )
+            db.add(new_day)
+
+    db.commit()
+
+    return {
+        "message": "Relevos programados correctamente"
+    }
 
 @router.get("/vehicle/{vehicle_id}")
 def get_shift_days_by_vehicle(

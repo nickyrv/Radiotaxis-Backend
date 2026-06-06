@@ -6,7 +6,7 @@ from datetime import date, datetime
 class ShiftDayBase(BaseModel):
 
     vehicle_id: int
-    driver_id: int
+    driver_id: Optional[int] = None
     shift_date: date
 
     source: Optional[str] = "automatic"

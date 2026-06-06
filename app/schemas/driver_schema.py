@@ -23,12 +23,10 @@ class DriverBase(BaseModel):
     license_category: Optional[str] = None
     photo_url: Optional[str] = None
     house_door_photo_url: Optional[str] = None
-
     ci_front_photo_url: Optional[str] = None
-
     ci_back_photo_url: Optional[str] = None
-
     electricity_bill_photo_url: Optional[str] = None
+    criminal_record_pdf_url: Optional[str] = None
 
 class DriverCreate(DriverBase):
     pass

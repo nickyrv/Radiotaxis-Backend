@@ -19,7 +19,7 @@ class ShiftDay(Base):
     driver_id = Column(
         Integer,
         ForeignKey("drivers.id"),
-        nullable=False
+        nullable=True
     )
 
     shift_date = Column(Date, nullable=False)
