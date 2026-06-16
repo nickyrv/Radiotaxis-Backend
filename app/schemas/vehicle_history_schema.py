@@ -11,6 +11,8 @@ class VehicleHistoryBase(BaseModel):
     event_date: date
     cost: Optional[Decimal] = None
     description: Optional[str] = None
+    maintenance_status: Optional[str] = "pending"
+    completed_date: Optional[date] = None
 
 class VehicleHistoryCreate(VehicleHistoryBase):
     pass

@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from pydantic import BaseModel
 from typing import List, Optional
 from app.database.connection import get_db
+from app.models.shift_model import Shift
 from app.models.shift_day_model import ShiftDay
 from app.schemas.shift_day_schema import (
     ShiftDayCreate,
@@ -39,6 +40,28 @@ def program_shift_days(
             status_code=400,
             detail="Debe seleccionar al menos un conductor"
         )
+    
+    previous_active_shifts = db.query(Shift).filter(
+        Shift.vehicle_id == data.vehicle_id,
+        Shift.is_active == 1
+    ).all()
+
+    for shift in previous_active_shifts:
+        shift.end_time = data.start_date.isoformat()
+        shift.status = "completed"
+        shift.is_active = 0
+
+    for index, driver_id in enumerate(data.driver_ids):
+        new_shift = Shift(
+            vehicle_id=data.vehicle_id,
+            driver_id=driver_id,
+            start_time=data.start_date.isoformat(),
+            end_time=None,
+            status="active",
+            turn_order=index + 1,
+            is_active=1
+        )
+        db.add(new_shift)
 
     for i in range(data.days_to_generate):
         current_date = data.start_date + timedelta(days=i)
@@ -47,6 +70,7 @@ def program_shift_days(
             driver_id = data.driver_ids[0] if i % 2 == 0 else None
         else:
             driver_id = data.driver_ids[i % len(data.driver_ids)]
+
 
         existing_day = db.query(ShiftDay).filter(
             ShiftDay.vehicle_id == data.vehicle_id,

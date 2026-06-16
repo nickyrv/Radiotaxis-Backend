@@ -6,6 +6,7 @@ class DriverBase(BaseModel):
 
     name: str
     ci: Optional[str] = None
+    ci_complement: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
 

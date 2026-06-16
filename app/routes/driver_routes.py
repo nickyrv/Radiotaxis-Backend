@@ -50,6 +50,27 @@ def create_driver(
     driver_data: DriverCreate,
     db: Session = Depends(get_db)
 ):
+    ci = driver_data.ci.strip() if driver_data.ci else None
+    ci_complement = (
+        driver_data.ci_complement.strip().upper()
+        if driver_data.ci_complement
+        else None
+    )
+
+    if ci:
+        existing_driver = db.query(Driver).filter(
+            Driver.ci == ci,
+            Driver.ci_complement == ci_complement
+        ).first()
+
+        if existing_driver:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un conductor registrado con ese CI y complemento"
+            )
+
+        driver_data.ci = ci
+        driver_data.ci_complement = ci_complement
 
     if driver_data.vehicle_id:
         vehicle = db.query(Vehicle).filter(
@@ -114,6 +135,29 @@ def update_driver(
             status_code=404,
             detail="Conductor no encontrado"
         )
+    
+    ci = driver_data.ci.strip() if driver_data.ci else None
+    ci_complement = (
+        driver_data.ci_complement.strip().upper()
+        if driver_data.ci_complement
+        else None
+    )
+
+    if ci:
+        existing_driver = db.query(Driver).filter(
+            Driver.ci == ci,
+            Driver.ci_complement == ci_complement,
+            Driver.id != driver_id
+        ).first()
+
+        if existing_driver:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe otro conductor registrado con ese CI y complemento"
+            )
+
+        driver_data.ci = ci
+        driver_data.ci_complement = ci_complement
 
     if driver_data.vehicle_id:
         vehicle = db.query(Vehicle).filter(

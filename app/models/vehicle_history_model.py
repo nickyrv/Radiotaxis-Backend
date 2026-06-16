@@ -15,5 +15,6 @@ class VehicleHistory(Base):
     event_date = Column(Date, nullable=False)
     cost = Column(Numeric(10, 2), nullable=True)
     description = Column(Text, nullable=True)
-
+    maintenance_status = Column(String(50), default="pending")
+    completed_date = Column(Date, nullable=True)
     created_at = Column(DateTime, server_default=func.now())

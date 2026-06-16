@@ -9,6 +9,7 @@ class Driver(Base):
 
     name = Column(String(100), nullable=False)
     ci = Column(String(30))
+    ci_complement = Column(String(10), nullable=True)
     phone = Column(String(30))
     email = Column(String(100))
 
