@@ -9,6 +9,7 @@ from app.database.connection import get_db
 
 from app.models.driver_model import Driver
 from app.models.vehicle_model import Vehicle
+from app.models.user_model import User
 
 from app.schemas.driver_schema import (
     DriverCreate,
@@ -106,6 +107,26 @@ def create_driver(
     db.commit()
 
     db.refresh(new_driver)
+    
+    if new_driver.email:
+        existing_user = db.query(User).filter(
+            User.email == new_driver.email
+        ).first()
+
+        if not existing_user:
+            default_password = new_driver.ci if new_driver.ci else "123456"
+
+            new_user = User(
+                name=new_driver.name,
+                email=new_driver.email,
+                password=default_password,
+                role="driver",
+                related_id=new_driver.id,
+                status="active"
+            )
+
+            db.add(new_user)
+            db.commit()
 
     if new_driver.vehicle_id:
         vehicle = db.query(Vehicle).filter(

@@ -47,7 +47,7 @@ def program_shift_days(
     ).all()
 
     for shift in previous_active_shifts:
-        shift.end_time = data.start_date.isoformat()
+        shift.end_time = data.start_date
         shift.status = "completed"
         shift.is_active = 0
 
@@ -55,8 +55,8 @@ def program_shift_days(
         new_shift = Shift(
             vehicle_id=data.vehicle_id,
             driver_id=driver_id,
-            start_time=data.start_date.isoformat(),
-            end_time=None,
+            start_time=data.start_date,
+            end_time=date(2099, 12, 31),
             status="active",
             turn_order=index + 1,
             is_active=1

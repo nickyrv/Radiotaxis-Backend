@@ -197,51 +197,83 @@ def update_vehicle(
 
 @router.patch("/{vehicle_id}/deactivate")
 def deactivate_vehicle(
-        vehicle_id: int,
-        db: Session = Depends(get_db)
-    ):
-        vehicle = db.query(Vehicle).filter(
-            Vehicle.id == vehicle_id
-        ).first()
+    vehicle_id: int,
+    db: Session = Depends(get_db)
+):
+    vehicle = db.query(Vehicle).filter(
+        Vehicle.id == vehicle_id
+    ).first()
 
-        if not vehicle:
-            raise HTTPException(
-                status_code=404,
-                detail="Vehículo no encontrado"
-            )
-
-        vehicle.management_status = "inactive"
-        vehicle.deactivation_date = date.today()
-        vehicle.current_driver_id = None
-
-        db.query(Driver).filter(
-            Driver.vehicle_id == vehicle_id
-        ).update({
-            Driver.vehicle_id: None
-        })
-
-        db.query(Shift).filter(
-            Shift.vehicle_id == vehicle_id
-        ).update({
-            Shift.is_active: 0,
-            Shift.status: "completed"
-        })
-        db.query(ShiftDay).filter(
-            ShiftDay.vehicle_id == vehicle_id
-        ).delete()
-
-        new_event = VehicleManagementEvent(
-            vehicle_id=vehicle_id,
-            event_type="deactivated",
-            notes="Vehículo dado de baja. Conductores y relevos liberados de la asignación."
+    if not vehicle:
+        raise HTTPException(
+            status_code=404,
+            detail="Vehículo no encontrado"
         )
 
-        db.add(new_event)
+    today = date.today()
 
-        db.commit()
-        db.refresh(vehicle)
+    assigned_drivers = db.query(Driver).filter(
+        Driver.vehicle_id == vehicle_id
+    ).all()
 
-        return vehicle
+    for driver in assigned_drivers:
+        active_shift = db.query(Shift).filter(
+            Shift.vehicle_id == vehicle_id,
+            Shift.driver_id == driver.id,
+            Shift.is_active == 1
+        ).first()
+
+        if active_shift:
+            active_shift.end_time = today.isoformat()
+            active_shift.status = "completed"
+            active_shift.is_active = 0
+        else:
+            new_shift = Shift(
+                vehicle_id=vehicle_id,
+                driver_id=driver.id,
+                start_time=vehicle.registration_date or today.isoformat(),
+                end_time=today.isoformat(),
+                status="completed",
+                turn_order=1,
+                is_active=0
+            )
+            db.add(new_shift)
+
+    vehicle.management_status = "inactive"
+    vehicle.deactivation_date = today
+    vehicle.current_driver_id = None
+
+    db.query(Driver).filter(
+        Driver.vehicle_id == vehicle_id
+    ).update({
+        Driver.vehicle_id: None
+    })
+
+    db.query(Shift).filter(
+        Shift.vehicle_id == vehicle_id,
+        Shift.end_time == None
+    ).update({
+        Shift.end_time: today.isoformat(),
+        Shift.is_active: 0,
+        Shift.status: "completed"
+    })
+
+    db.query(ShiftDay).filter(
+        ShiftDay.vehicle_id == vehicle_id
+    ).delete()
+
+    new_event = VehicleManagementEvent(
+        vehicle_id=vehicle_id,
+        event_type="deactivated",
+        notes="Vehículo dado de baja. Conductores liberados y relevos cerrados por baja del vehículo."
+    )
+
+    db.add(new_event)
+
+    db.commit()
+    db.refresh(vehicle)
+
+    return vehicle
 
 @router.patch("/{vehicle_id}/activate")
 def activate_vehicle(

@@ -11,3 +11,4 @@ class User(Base):
     role = Column(String(50), nullable=False)
     related_id = Column(Integer, nullable=True)
     status = Column(String(50), default="active")
+    photo_url = Column(String(255), nullable=True)
